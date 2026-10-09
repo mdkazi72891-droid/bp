@@ -192,8 +192,8 @@ add_action('wp_head', function() {
         ?>
         var strictParams = <?php echo json_encode($strict_params_php); ?>;
         
-        var sysWeb = {}; for(var i=0; i<webEvents.length; i++) sysWeb[webEvents[i]] = 1;
-        var sysCapi = {}; for(var i=0; i<capiEvents.length; i++) sysCapi[capiEvents[i]] = 1;
+        var sysWeb = {}; for(var i=0; i<webEvents.length; i++) sysWeb[webEvents[i]] = 1; sysWeb['PageView'] = 1;
+        var sysCapi = {}; for(var i=0; i<capiEvents.length; i++) sysCapi[capiEvents[i]] = 1; sysCapi['PageView'] = 1;
 
         window.bpTrackEvent = function(eventName, customData, forcedEventId) {
             var evId = forcedEventId ? forcedEventId : 'evt_' + eventName.toLowerCase() + '_' + Date.now() + '_' + Math.floor(Math.random()*1000); 
@@ -374,8 +374,11 @@ add_action('wp_footer', function() {
             if(window.bpProductData && window.bpProductData.content_ids[0] === productId) { d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category; d.value = window.bpProductData.value; } 
             window.bpTrackEvent("AddToCart", d); 
         }); 
+        var clickedBtn = null;
+        $("form.cart").on("click", "button[type=\'submit\']", function() { clickedBtn = $(this); });
         $("form.cart").on("submit", function(e) { 
-            var btn = $(this).find("button[type=\'submit\']"); if(btn.hasClass("ajax_add_to_cart") || btn.hasClass("buy_now_button") || btn.hasClass("buy_now") || btn.hasClass("quick_buy")) return;
+            var btn = clickedBtn || $(this).find("button[type=\'submit\']").first();
+            if(btn.hasClass("ajax_add_to_cart") || btn.hasClass("buy_now_button") || btn.hasClass("buy_now") || btn.hasClass("quick_buy") || (btn.attr("name") && btn.attr("name").indexOf("buy_now") !== -1)) return;
             if(!$(this).data("markeflav_bp_tracked")) {
                 e.preventDefault(); var form = this;
                 var parentId = String($(this).find("input[name=\'add-to-cart\']").val() || btn.val());
@@ -393,6 +396,9 @@ add_action('wp_footer', function() {
                 }
                 window.bpTrackEvent("AddToCart", d); 
                 $(this).data("markeflav_bp_tracked", true);
+                if (btn.attr("name") && btn.attr("value")) {
+                    $("<input>").attr({ type: "hidden", name: btn.attr("name"), value: btn.attr("value") }).appendTo(form);
+                }
                 setTimeout(function(){ form.submit(); }, 350); 
             }
         });'; 
