@@ -1,0 +1,185 @@
+diff --git a/modules/tracking/class-bp-tracking.php b/modules/tracking/class-bp-tracking.php
+index eb54c0f..69e4358 100644
+--- a/modules/tracking/class-bp-tracking.php
++++ b/modules/tracking/class-bp-tracking.php
+@@ -103,7 +103,11 @@ add_action('wp_head', function() {
+     (function(){
+         function setCookie(n,v,days){var d=new Date();d.setTime(d.getTime()+((days||730)*24*60*60*1000));var dom=location.hostname.replace(/^www\./i,'');document.cookie=n+"="+v+";path=/;domain=."+dom+";expires="+d.toUTCString();}
+         function getCookie(n){var m=document.cookie.match(new RegExp('(^| )'+n+'=([^;]+)'));return m?m[2]:null;}
+-        function uuid(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c=='x'?r:(r&0x3|0x8);return v.toString(16);});}
++        function uuid(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0,v=c=='x'?r:(r&0x3|0x8);return v.toString(16);});}
++        window.getLS = function(k){try{return window.localStorage.getItem(k);}catch(e){return null;}};
++        window.setLS = function(k,v){try{window.localStorage.setItem(k,v);}catch(e){}};
++        window.getSS = function(k){try{return window.sessionStorage.getItem(k);}catch(e){return null;}};
++        window.setSS = function(k,v){try{window.sessionStorage.setItem(k,v);}catch(e){}};
+
+         window.bpExtId = getCookie('guest_ext_id_backup'); if(!window.bpExtId) { window.bpExtId = uuid(); setCookie('guest_ext_id_backup', window.bpExtId); }
+         var uParams = new URLSearchParams(window.location.search); ['utm_campaign', 'utm_content', 'utm_term'].forEach(function(k) { if(uParams.get(k)) setCookie('_markeflav_bp_'+k, uParams.get(k)); });
+@@ -111,8 +115,8 @@ add_action('wp_head', function() {
+         window.sys_fbc = getCookie('_fbc'); if (!window.sys_fbc && uParams.has('fbclid')) { window.sys_fbc = 'fb.1.' + Date.now() + '.' + uParams.get('fbclid'); setCookie('_fbc', window.sys_fbc); }
+         window.sys_fbp = getCookie('_fbp'); if (!window.sys_fbp) { window.sys_fbp = 'fb.1.' + Date.now() + '.' + Math.floor(Math.random() * 10000000000); setCookie('_fbp', window.sys_fbp); }
+
+-        var isNewSession = !sessionStorage.getItem('markeflav_bp_sess_actv');
+-        if(isNewSession) sessionStorage.setItem('markeflav_bp_sess_actv', '1');
++        var isNewSession = !window.getSS('markeflav_bp_sess_actv');
++        if(isNewSession) window.setSS('markeflav_bp_sess_actv', '1');
+
+         var rawCookieVal = getCookie('lifetime_visit_count');
+         var parsedCookieVc = parseInt(rawCookieVal);
+@@ -120,7 +124,7 @@ add_action('wp_head', function() {
+         if (!rawCookieVal || rawCookieVal === 'NaN' || isNaN(parsedCookieVc) || parsedCookieVc < 1) {
+             window.bpVisitCount = 1;
+         } else {
+-            var currentSessVc = parseInt(sessionStorage.getItem('markeflav_bp_sess_vc'));
++            var currentSessVc = parseInt(window.getSS('markeflav_bp_sess_vc'));
+             if (!isNaN(currentSessVc) && currentSessVc > 0) {
+                 window.bpVisitCount = currentSessVc;
+             } else {
+@@ -129,11 +133,11 @@ add_action('wp_head', function() {
+         }
+
+         setCookie('lifetime_visit_count', window.bpVisitCount, 5475);
+-        localStorage.setItem('lifetime_visit_count', window.bpVisitCount);
+-        sessionStorage.setItem('markeflav_bp_sess_vc', window.bpVisitCount);
++        window.setLS('lifetime_visit_count', window.bpVisitCount);
++        window.setSS('markeflav_bp_sess_vc', window.bpVisitCount);
+
+         window.bpGetDynUser = function() {
+-            var pData = <?php echo json_encode($raw_php_data); ?>; var lData = JSON.parse(localStorage.getItem('_markeflav_bp_guest_form') || '{}');
++            var pData = <?php echo json_encode($raw_php_data); ?>; var lData = JSON.parse(window.getLS('_markeflav_bp_guest_form') || '{}');
+             var dEm = (document.getElementById('billing_email') ? document.getElementById('billing_email').value : '') || pData.em || lData.em || '';
+             var dPh = (document.getElementById('billing_phone') ? document.getElementById('billing_phone').value : '') || pData.ph || lData.ph || '';
+             var dFn = (document.getElementById('billing_first_name') ? document.getElementById('billing_first_name').value : '') || pData.fn || lData.fn || '';
+@@ -142,7 +146,7 @@ add_action('wp_head', function() {
+             var dZp = (document.getElementById('billing_postcode') ? document.getElementById('billing_postcode').value : '') || pData.zp || lData.zp || '';
+
+             var nData = {em: dEm, ph: dPh, fn: dFn, ln: dLn, ct: dCt, st: lData.st||'', cn: lData.cn||'', zp: dZp};
+-            if(dEm || dPh || dFn) localStorage.setItem('_markeflav_bp_guest_form', JSON.stringify(nData));
++            if(dEm || dPh || dFn) window.setLS('_markeflav_bp_guest_form', JSON.stringify(nData));
+
+             return {
+                 em: dEm, ph: dPh, fn: dFn, ln: dLn, ct: dCt, st: nData.st, cn: nData.cn, zp: dZp,
+@@ -154,8 +158,8 @@ add_action('wp_head', function() {
+
+         window.bpAllCustomData = { user_role: '<?php echo esc_js($c['user_role']); ?>', lifetime_order_value: <?php echo $c['lifetime_order_value']; ?>, lifetime_orders_amount: <?php echo $c['lifetime_orders_amount']; ?>, new_customer: (window.bpVisitCount === 1), visit_count: window.bpVisitCount, device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop', business_type: 'retail', page_title: '<?php echo $page_title; ?>', post_id: '<?php echo $post_id; ?>', event_source_url: window.location.href, first_party_collection: true };
+
+-        var ltvAmt = parseInt(localStorage.getItem('_markeflav_bp_ltv_amt') || getCookie('_markeflav_bp_ltv_amt')) || 0;
+-        var ltvVal = parseFloat(localStorage.getItem('_markeflav_bp_ltv_val') || getCookie('_markeflav_bp_ltv_val')) || 0;
++        var ltvAmt = parseInt(window.getLS('_markeflav_bp_ltv_amt') || getCookie('_markeflav_bp_ltv_amt')) || 0;
++        var ltvVal = parseFloat(window.getLS('_markeflav_bp_ltv_val') || getCookie('_markeflav_bp_ltv_val')) || 0;
+         if(ltvAmt > 0) { window.bpAllCustomData.lifetime_orders_amount = ltvAmt; window.bpAllCustomData.lifetime_order_value = ltvVal; }
+
+         var initUser = window.bpGetDynUser(); var cleanFbqData = {};
+@@ -192,8 +196,8 @@ add_action('wp_head', function() {
+         ?>
+         var strictParams = <?php echo json_encode($strict_params_php); ?>;
+
+-        var sysWeb = {}; for(var i=0; i<webEvents.length; i++) sysWeb[webEvents[i]] = 1;
+-        var sysCapi = {}; for(var i=0; i<capiEvents.length; i++) sysCapi[capiEvents[i]] = 1;
++        var sysWeb = {}; for(var i=0; i<webEvents.length; i++) sysWeb[webEvents[i]] = 1; sysWeb['PageView'] = 1;
++        var sysCapi = {}; for(var i=0; i<capiEvents.length; i++) sysCapi[capiEvents[i]] = 1; sysCapi['PageView'] = 1;
+
+         window.bpTrackEvent = function(eventName, customData, forcedEventId) {
+             var evId = forcedEventId ? forcedEventId : 'evt_' + eventName.toLowerCase() + '_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+@@ -244,7 +248,7 @@ add_action('wp_head', function() {
+             var vCount = parseInt(window.bpVisitCount);
+             if(isNaN(vCount)) vCount = 1; // Bulletproof Fallback for cleared data
+
+-            var ltvAmtCheck = parseInt(localStorage.getItem('_markeflav_bp_ltv_amt') || getCookie('_markeflav_bp_ltv_amt')) || 0;
++            var ltvAmtCheck = parseInt(window.getLS('_markeflav_bp_ltv_amt') || getCookie('_markeflav_bp_ltv_amt')) || 0;
+             var isCustomer = (window.bpAllCustomData.lifetime_orders_amount > 0 || ltvAmtCheck > 0);
+
+             setTimeout(function(){
+@@ -270,7 +274,7 @@ add_action('wp_footer', function() {
+
+         echo '<script>jQuery(document).on("blur change", ".woocommerce-checkout input.input-text", function() {
+         var hashStr = function(s) { return s ? s.trim().toLowerCase() : ""; }; // FB expects lowercase for hashing on client side if passed directly, or fbq will hash it.
+-        var d = JSON.parse(localStorage.getItem("_markeflav_bp_guest_form") || "{}");
++        var d = JSON.parse(window.getLS("_markeflav_bp_guest_form") || "{}");
+         d.em = jQuery("#billing_email").val() || d.em;
+         d.ph = jQuery("#billing_phone").val() || d.ph;
+         d.fn = jQuery("#billing_first_name").val() || d.fn;
+@@ -279,7 +283,7 @@ add_action('wp_footer', function() {
+         d.st = jQuery("#billing_state").val() || d.st;
+         d.cn = jQuery("#billing_country").val() || d.cn;
+         d.zp = jQuery("#billing_postcode").val() || d.zp;
+-        localStorage.setItem("_markeflav_bp_guest_form", JSON.stringify(d));
++        window.setLS("_markeflav_bp_guest_form", JSON.stringify(d));
+
+         // Push advanced matching to pixel
+         if (typeof fbq === "function") {
+@@ -354,11 +358,11 @@ add_action('wp_footer', function() {
+             echo "<script>
+             var expireDate = new Date(); expireDate.setTime(expireDate.getTime() + (730*24*60*60*1000)); var expires = 'expires='+ expireDate.toUTCString();
+             document.cookie = '_markeflav_bp_ltv_amt=".$safe_amt.";' + expires + ';path=/'; document.cookie = '_markeflav_bp_ltv_val=".$safe_val.";' + expires + ';path=/';
+-            localStorage.setItem('_markeflav_bp_ltv_amt', '".$safe_amt."'); localStorage.setItem('_markeflav_bp_ltv_val', '".$safe_val."');
++            window.setLS('_markeflav_bp_ltv_amt', '".$safe_amt."'); window.setLS('_markeflav_bp_ltv_val', '".$safe_val."');
+
+-            var svd = JSON.parse(localStorage.getItem('_markeflav_bp_guest_form') || '{}');
++            var svd = JSON.parse(window.getLS('_markeflav_bp_guest_form') || '{}');
+             svd.em = '".esc_js($o->get_billing_email())."'; svd.ph = '".esc_js($o->get_billing_phone())."'; svd.fn = '".esc_js($o->get_billing_first_name())."'; svd.ln = '".esc_js($o->get_billing_last_name())."'; svd.ct = '".esc_js($o->get_billing_city())."'; svd.zp = '".esc_js($o->get_billing_postcode())."';
+-            localStorage.setItem('_markeflav_bp_guest_form', JSON.stringify(svd));
++            window.setLS('_markeflav_bp_guest_form', JSON.stringify(svd));
+
+             if(typeof window.bpTrackEvent === 'function') { window.bpTrackEvent('Purchase', {value: ".$o->get_total().", currency: '".$o->get_currency()."', content_ids: ".json_encode($ids).", contents: ".json_encode($contents).", content_name: '".$name_str."', content_category: '".$cat_str."', content_type: 'product', num_items: ".$o->get_item_count().", order_id: '".esc_js($order_id)."', transaction_id: '".esc_js($order_id)."', shipping_charge: ".$o->get_shipping_total().", tax: ".$o->get_total_tax().", discount_total: ".$o->get_discount_total().", payment_method: '".esc_js($o->get_payment_method_title())."', coupon: '".esc_js($cpn)."', order_date: '".esc_js($o->get_date_created()->format('Y-m-d'))."', lifetime_orders_amount: ".$safe_amt.", lifetime_order_value: ".$safe_val."}, '".$dedup_id."'); }
+             </script>";
+@@ -374,27 +378,38 @@ add_action('wp_footer', function() {
+             if(window.bpProductData && window.bpProductData.content_ids[0] === productId) { d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category; d.value = window.bpProductData.value; }
+             window.bpTrackEvent("AddToCart", d);
+         });
+-        $("form.cart").on("submit", function(e) {
+-            var btn = $(this).find("button[type=\'submit\']"); if(btn.hasClass("ajax_add_to_cart") || btn.hasClass("buy_now_button") || btn.hasClass("buy_now") || btn.hasClass("quick_buy")) return;
+-            if(!$(this).data("markeflav_bp_tracked")) {
+-                e.preventDefault(); var form = this;
+-                var parentId = String($(this).find("input[name=\'add-to-cart\']").val() || btn.val());
+-                var varId = String($(this).find("input[name=\'variation_id\']").val() || "");
+-                var productId = (varId && varId !== "0") ? varId : parentId;
+-                if (!productId || productId==="undefined") { form.submit(); return; }
+-                var qty = parseInt($(this).find("input[name=\'quantity\']").val()) || 1;
+-                var d = {content_ids: [productId], contents: [{id: productId, quantity: qty}], content_type: "product", num_items: qty, currency: "'.get_woocommerce_currency().'"};
+-                if(window.bpProductData && window.bpProductData.content_ids[0] === parentId && productId !== parentId) {
+-                    d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category;
+-                    var varPrice = parseFloat($(this).find(".woocommerce-variation-price .amount").text().replace(/[^0-9.]/g, ""));
+-                    d.value = (!isNaN(varPrice) && varPrice > 0 ? varPrice : window.bpProductData.value) * qty;
+-                } else if (window.bpProductData && window.bpProductData.content_ids[0] === productId) {
+-                    d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category; d.value = window.bpProductData.value * qty;
+-                }
+-                window.bpTrackEvent("AddToCart", d);
+-                $(this).data("markeflav_bp_tracked", true);
+-                setTimeout(function(){ form.submit(); }, 350);
+-            }
++        var clickedBtn = null;
++        $("form.cart").on("click", "button[type=\'submit\']", function() { clickedBtn = $(this); });
++        $("form.cart").on("submit", function(e) {
++            var btn = clickedBtn || $(this).find("button[type=\'submit\']").first();
++            if(btn.hasClass("ajax_add_to_cart") || btn.hasClass("buy_now_button") || btn.hasClass("buy_now") || btn.hasClass("quick_buy") || (btn.attr("name") && btn.attr("name").indexOf("buy_now") !== -1)) return;
++            if(!$(this).data("markeflav_bp_tracked")) {
++                e.preventDefault(); var form = this;
++                var parentId = String($(this).find("input[name=\'add-to-cart\']").val() || btn.val());
++                var varId = String($(this).find("input[name=\'variation_id\']").val() || "");
++                var productId = (varId && varId !== "0") ? varId : parentId;
++                if (!productId || productId==="undefined") {
++                    $(this).data("markeflav_bp_tracked", true);
++                    if (btn.length) { btn.get(0).click(); } else { form.submit(); } return;
++                }
++                var qty = parseInt($(this).find("input[name=\'quantity\']").val()) || 1;
++                var d = {content_ids: [productId], contents: [{id: productId, quantity: qty}], content_type: "product", num_items: qty, currency: "'.get_woocommerce_currency().'"};
++                if(window.bpProductData && window.bpProductData.content_ids[0] === parentId && productId !== parentId) {
++                    d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category;
++                    var varPrice = parseFloat($(this).find(".woocommerce-variation-price .amount").text().replace(/[^0-9.]/g, ""));
++                    d.value = (!isNaN(varPrice) && varPrice > 0 ? varPrice : window.bpProductData.value) * qty;
++                } else if (window.bpProductData && window.bpProductData.content_ids[0] === productId) {
++                    d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category; d.value = window.bpProductData.value * qty;
++                }
++                window.bpTrackEvent("AddToCart", d);
++                $(this).data("markeflav_bp_tracked", true);
++                if (btn.attr("name") && btn.attr("value")) {
++                    $("<input>").attr({ type: "hidden", name: btn.attr("name"), value: btn.attr("value") }).appendTo(form);
++                }
++                setTimeout(function(){
++                    if (btn.length) { btn.get(0).click(); } else { form.submit(); }
++                }, 350);
++            }
+         });';
+     }
+     if (in_array('remove_from_cart', $web_events)) {
