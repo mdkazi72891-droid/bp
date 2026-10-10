@@ -108,6 +108,8 @@ add_action('wp_head', function() {
         window.setLS = function(k,v){try{window.localStorage.setItem(k,v);}catch(e){}};
         window.getSS = function(k){try{return window.sessionStorage.getItem(k);}catch(e){return null;}};
         window.setSS = function(k,v){try{window.sessionStorage.setItem(k,v);}catch(e){}};
+
+        window.safeJSONParse = function(s){try{return JSON.parse(s);}catch(e){return {};}};
         
         window.bpExtId = getCookie('guest_ext_id_backup'); if(!window.bpExtId) { window.bpExtId = uuid(); setCookie('guest_ext_id_backup', window.bpExtId); }
         var uParams = new URLSearchParams(window.location.search); ['utm_campaign', 'utm_content', 'utm_term'].forEach(function(k) { if(uParams.get(k)) setCookie('_markeflav_bp_'+k, uParams.get(k)); });
@@ -137,7 +139,7 @@ add_action('wp_head', function() {
         window.setSS('markeflav_bp_sess_vc', window.bpVisitCount);
         
         window.bpGetDynUser = function() {
-            var pData = <?php echo json_encode($raw_php_data); ?>; var lData = JSON.parse(window.getLS('_markeflav_bp_guest_form') || '{}');
+            var pData = <?php echo json_encode($raw_php_data); ?>; var lData = window.safeJSONParse(window.getLS('_markeflav_bp_guest_form') || '{}');
             var dEm = (document.getElementById('billing_email') ? document.getElementById('billing_email').value : '') || pData.em || lData.em || '';
             var dPh = (document.getElementById('billing_phone') ? document.getElementById('billing_phone').value : '') || pData.ph || lData.ph || '';
             var dFn = (document.getElementById('billing_first_name') ? document.getElementById('billing_first_name').value : '') || pData.fn || lData.fn || '';
@@ -274,7 +276,7 @@ add_action('wp_footer', function() {
     
         echo '<script>jQuery(document).on("blur change", ".woocommerce-checkout input.input-text", function() {
         var hashStr = function(s) { return s ? s.trim().toLowerCase() : ""; }; // FB expects lowercase for hashing on client side if passed directly, or fbq will hash it.
-        var d = JSON.parse(window.getLS("_markeflav_bp_guest_form") || "{}");
+        var d = window.safeJSONParse(window.getLS("_markeflav_bp_guest_form") || "{}");
         d.em = jQuery("#billing_email").val() || d.em;
         d.ph = jQuery("#billing_phone").val() || d.ph;
         d.fn = jQuery("#billing_first_name").val() || d.fn;
@@ -360,7 +362,7 @@ add_action('wp_footer', function() {
             document.cookie = '_markeflav_bp_ltv_amt=".$safe_amt.";' + expires + ';path=/'; document.cookie = '_markeflav_bp_ltv_val=".$safe_val.";' + expires + ';path=/';
             window.setLS('_markeflav_bp_ltv_amt', '".$safe_amt."'); window.setLS('_markeflav_bp_ltv_val', '".$safe_val."');
             
-            var svd = JSON.parse(window.getLS('_markeflav_bp_guest_form') || '{}');
+            var svd = window.safeJSONParse(window.getLS('_markeflav_bp_guest_form') || '{}');
             svd.em = '".esc_js($o->get_billing_email())."'; svd.ph = '".esc_js($o->get_billing_phone())."'; svd.fn = '".esc_js($o->get_billing_first_name())."'; svd.ln = '".esc_js($o->get_billing_last_name())."'; svd.ct = '".esc_js($o->get_billing_city())."'; svd.zp = '".esc_js($o->get_billing_postcode())."';
             window.setLS('_markeflav_bp_guest_form', JSON.stringify(svd));
 
@@ -383,27 +385,35 @@ add_action('wp_footer', function() {
         $("form.cart").on("submit", function(e) {
             var btn = clickedBtn || $(this).find("button[type=\'submit\']").first();
             var btnClass = btn.attr("class") || ""; var btnName = btn.attr("name") || "";
-            if(btn.hasClass("ajax_add_to_cart") || btnClass.indexOf("buy_now") !== -1 || btnClass.indexOf("buy-now") !== -1 || btnClass.indexOf("quick_buy") !== -1 || btnClass.indexOf("quick-buy") !== -1 || btnName.indexOf("buy_now") !== -1 || btnName.indexOf("buy-now") !== -1) return;
+            var isBuyNow = (btnClass.indexOf("buy_now") !== -1 || btnClass.indexOf("buy-now") !== -1 || btnClass.indexOf("quick_buy") !== -1 || btnClass.indexOf("quick-buy") !== -1 || btnName.indexOf("buy_now") !== -1 || btnName.indexOf("buy-now") !== -1);
+            if(btn.hasClass("ajax_add_to_cart")) return;
+
             if(!$(this).data("markeflav_bp_tracked")) {
-                e.preventDefault(); var form = this;
+                var form = this;
                 var parentId = String($(this).find("input[name=\'add-to-cart\']").val() || btn.val());
                 var varId = String($(this).find("input[name=\'variation_id\']").val() || "");
                 var productId = (varId && varId !== "0") ? varId : parentId;
-                if (!productId || productId==="undefined") {
-                    $(this).data("markeflav_bp_tracked", true);
-                    if (btn.length) { btn.get(0).click(); } else { form.submit(); } return;
+
+                if (productId && productId!=="undefined") {
+                    var qty = parseInt($(this).find("input[name=\'quantity\']").val()) || 1;
+                    var d = {content_ids: [productId], contents: [{id: productId, quantity: qty}], content_type: "product", num_items: qty, currency: "'.get_woocommerce_currency().'"};
+                    if(window.bpProductData && window.bpProductData.content_ids[0] === parentId && productId !== parentId) {
+                        d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category;
+                        var varPrice = parseFloat($(this).find(".woocommerce-variation-price .amount").text().replace(/[^0-9.]/g, ""));
+                        d.value = (!isNaN(varPrice) && varPrice > 0 ? varPrice : window.bpProductData.value) * qty;
+                    } else if (window.bpProductData && window.bpProductData.content_ids[0] === productId) {
+                        d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category; d.value = window.bpProductData.value * qty;
+                    }
+                    window.bpTrackEvent("AddToCart", d);
                 }
-                var qty = parseInt($(this).find("input[name=\'quantity\']").val()) || 1;
-                var d = {content_ids: [productId], contents: [{id: productId, quantity: qty}], content_type: "product", num_items: qty, currency: "'.get_woocommerce_currency().'"};
-                if(window.bpProductData && window.bpProductData.content_ids[0] === parentId && productId !== parentId) {
-                    d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category;
-                    var varPrice = parseFloat($(this).find(".woocommerce-variation-price .amount").text().replace(/[^0-9.]/g, ""));
-                    d.value = (!isNaN(varPrice) && varPrice > 0 ? varPrice : window.bpProductData.value) * qty;
-                } else if (window.bpProductData && window.bpProductData.content_ids[0] === productId) {
-                    d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category; d.value = window.bpProductData.value * qty;
-                }
-                window.bpTrackEvent("AddToCart", d);
+
                 $(this).data("markeflav_bp_tracked", true);
+
+                if (isBuyNow || !productId || productId==="undefined") {
+                    return;
+                }
+
+                e.preventDefault();
                 if (btn.attr("name") && btn.attr("value")) {
                     $("<input>").attr({ type: "hidden", name: btn.attr("name"), value: btn.attr("value") }).appendTo(form);
                 }
