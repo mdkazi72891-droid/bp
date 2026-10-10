@@ -100,6 +100,7 @@ add_action('wp_head', function() {
     ?>
     <script>
     !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    try {
     (function(){
         function setCookie(n,v,days){var d=new Date();d.setTime(d.getTime()+((days||730)*24*60*60*1000));var dom=location.hostname.replace(/^www\./i,'');document.cookie=n+"="+v+";path=/;domain=."+dom+";expires="+d.toUTCString();}
         function getCookie(n){var m=document.cookie.match(new RegExp('(^| )'+n+'=([^;]+)'));return m?m[2]:null;}
@@ -202,6 +203,7 @@ add_action('wp_head', function() {
         var sysCapi = {}; for(var i=0; i<capiEvents.length; i++) sysCapi[capiEvents[i]] = 1; sysCapi['PageView'] = 1;
 
         window.bpTrackEvent = function(eventName, customData, forcedEventId) {
+            try {
             var evId = forcedEventId ? forcedEventId : 'evt_' + eventName.toLowerCase() + '_' + Date.now() + '_' + Math.floor(Math.random()*1000);
             var finalData = {}; var mapKey = strictParams[eventName] ? eventName : 'ViewContent';
             var allowed = strictParams[mapKey] || [];
@@ -223,7 +225,11 @@ add_action('wp_head', function() {
 
             if (fireWeb) {
                 if(['PageView','ViewContent','AddToCart','InitiateCheckout','Purchase', 'view_cart', 'remove_from_cart'].indexOf(eventName) !== -1){
-                    fbq('track', eventName, finalData, {eventID: evId});
+                    if(eventName === 'PageView') {
+                        fbq('track', 'PageView', finalData, {eventID: evId});
+                    } else {
+                        fbq('track', eventName, finalData, {eventID: evId});
+                    }
                 } else {
                     fbq('trackCustom', eventName, finalData, {eventID: evId});
                 }
@@ -240,6 +246,7 @@ add_action('wp_head', function() {
                 var capiPayload = { event_name: eventName, event_id: evId, custom_data: finalData, user_data: liveUser, event_source_url: window.location.href, url: window.location.href };
                 fetch('<?php echo esc_url(rest_url('bp/v1/capi')); ?>', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(capiPayload), keepalive: true }).catch(function(){});
             }
+            } catch(e) { console.error('Tracking Error', e); }
         };
 
         window.addEventListener('pageshow', function(e) {
@@ -264,7 +271,13 @@ add_action('wp_head', function() {
             }, 1500);
         }
     })();
-    window.bpTrackEvent('PageView'); // Force PageView everywhere
+    } catch(err) {
+        console.error('BP Tracker error:', err);
+    }
+    try {
+        if (typeof window.bpTrackEvent === 'function') { window.bpTrackEvent('PageView'); }
+        else if (typeof fbq === 'function') { fbq('track', 'PageView'); }
+    } catch(err) {}
     </script>
     <?php
 }, 5);
@@ -376,6 +389,14 @@ add_action('wp_footer', function() {
     if (in_array('AddToCart', $web_events)) {
         echo '$(document.body).on("added_to_cart", function(e, fragments, cart_hash, button) {
             var productId = String($(button).data("product_id") || $(button).val()); if (!productId || productId==="undefined") return;
+
+            var btnText = ($(button).text() || "").toLowerCase();
+            var btnClass = ($(button).attr("class") || "").toLowerCase();
+            var isBuyNow = (btnClass.indexOf("buy") !== -1 || btnClass.indexOf("quick") !== -1 || btnText.indexOf("buy") !== -1 || btnText.indexOf("checkout") !== -1);
+            if(isBuyNow) {
+                $(button).removeClass("ajax_add_to_cart");
+                return;
+            }
             var d = {content_ids: [productId], contents: [{id: productId, quantity: 1}], content_type: "product", currency: "'.get_woocommerce_currency().'"};
             if(window.bpProductData && window.bpProductData.content_ids[0] === productId) { d.content_name = window.bpProductData.content_name; d.content_category = window.bpProductData.content_category; d.value = window.bpProductData.value; }
             window.bpTrackEvent("AddToCart", d);
@@ -387,10 +408,12 @@ add_action('wp_footer', function() {
             var btnClass = (btn.attr("class") || "").toLowerCase();
             var btnName = (btn.attr("name") || "").toLowerCase();
             var btnId = (btn.attr("id") || "").toLowerCase();
+            var btnText = (btn.text() || "").toLowerCase();
 
-            var isBuyNow = (btnClass.indexOf("buy") !== -1 || btnClass.indexOf("quick") !== -1 || btnClass.indexOf("express") !== -1 || btnName.indexOf("buy") !== -1 || btnName.indexOf("quick") !== -1 || btnId.indexOf("buy") !== -1);
+            var isBuyNow = (btnClass.indexOf("buy") !== -1 || btnClass.indexOf("quick") !== -1 || btnClass.indexOf("express") !== -1 || btnName.indexOf("buy") !== -1 || btnName.indexOf("quick") !== -1 || btnId.indexOf("buy") !== -1 || btnText.indexOf("buy") !== -1 || btnText.indexOf("checkout") !== -1);
 
-            if(isBuyNow || btn.hasClass("ajax_add_to_cart")) {
+            if(isBuyNow) {
+                btn.removeClass("ajax_add_to_cart");
                 return;
             }
 
@@ -415,15 +438,28 @@ add_action('wp_footer', function() {
 
                 $(this).data("markeflav_bp_tracked", true);
 
+                var isBuyNowFallback = (btn.attr("class")||"").toLowerCase().indexOf("buy") !== -1 || (btn.text()||"").toLowerCase().indexOf("buy") !== -1 || (btn.text()||"").toLowerCase().indexOf("checkout") !== -1;
+
                 if (!productId || productId==="undefined") {
-                    if (btn.length) { btn.get(0).click(); } else { form.submit(); } return;
+                    if (btn.length) {
+                        if(isBuyNowFallback) btn.removeClass("ajax_add_to_cart");
+                        btn.get(0).click();
+                    } else {
+                        form.submit();
+                    }
+                    return;
                 }
 
                 if (btn.attr("name") && btn.attr("value")) {
                     $("<input>").attr({ type: "hidden", name: btn.attr("name"), value: btn.attr("value") }).appendTo(form);
                 }
                 setTimeout(function(){
-                    if (btn.length) { btn.get(0).click(); } else { form.submit(); }
+                    if (btn.length) {
+                        if(isBuyNowFallback) btn.removeClass("ajax_add_to_cart");
+                        btn.get(0).click();
+                    } else {
+                        form.submit();
+                    }
                 }, 350);
             }
         });';
