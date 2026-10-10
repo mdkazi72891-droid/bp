@@ -382,7 +382,8 @@ add_action('wp_footer', function() {
         $("form.cart").on("click", "button[type=\'submit\']", function() { clickedBtn = $(this); });
         $("form.cart").on("submit", function(e) {
             var btn = clickedBtn || $(this).find("button[type=\'submit\']").first();
-            if(btn.hasClass("ajax_add_to_cart") || btn.hasClass("buy_now_button") || btn.hasClass("buy_now") || btn.hasClass("quick_buy") || (btn.attr("name") && btn.attr("name").indexOf("buy_now") !== -1)) return;
+            var btnClass = btn.attr("class") || ""; var btnName = btn.attr("name") || "";
+            if(btn.hasClass("ajax_add_to_cart") || btnClass.indexOf("buy_now") !== -1 || btnClass.indexOf("buy-now") !== -1 || btnClass.indexOf("quick_buy") !== -1 || btnClass.indexOf("quick-buy") !== -1 || btnName.indexOf("buy_now") !== -1 || btnName.indexOf("buy-now") !== -1) return;
             if(!$(this).data("markeflav_bp_tracked")) {
                 e.preventDefault(); var form = this;
                 var parentId = String($(this).find("input[name=\'add-to-cart\']").val() || btn.val());
