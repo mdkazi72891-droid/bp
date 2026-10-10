@@ -165,7 +165,7 @@ add_action('wp_head', function() {
         if(ltvAmt > 0) { window.bpAllCustomData.lifetime_orders_amount = ltvAmt; window.bpAllCustomData.lifetime_order_value = ltvVal; }
         
         var initUser = window.bpGetDynUser(); var cleanFbqData = {}; 
-        ['em','ph','fn','ln','ct','st','cn','zp','external_id'].forEach(function(k){ if(initUser[k]) cleanFbqData[k] = initUser[k].toLowerCase().trim(); });
+        ['em','ph','fn','ln','ct','st','cn','zp','external_id'].forEach(function(k){ if(initUser[k] && typeof initUser[k] === 'string') cleanFbqData[k] = initUser[k].toLowerCase().trim(); });
         
         fbq('set', 'autoConfig', false, '<?php echo esc_js(get_option('sys_pid')); ?>');
         fbq('init', '<?php echo esc_js(get_option('sys_pid')); ?>', cleanFbqData);
@@ -384,9 +384,11 @@ add_action('wp_footer', function() {
         $("form.cart").on("click", "button[type=\'submit\']", function() { clickedBtn = $(this); });
         $("form.cart").on("submit", function(e) {
             var btn = clickedBtn || $(this).find("button[type=\'submit\']").first();
-            var btnClass = btn.attr("class") || ""; var btnName = btn.attr("name") || "";
+            var btnClass = (btn.attr("class") || "").toLowerCase(); var btnName = (btn.attr("name") || "").toLowerCase();
             var isBuyNow = (btnClass.indexOf("buy_now") !== -1 || btnClass.indexOf("buy-now") !== -1 || btnClass.indexOf("quick_buy") !== -1 || btnClass.indexOf("quick-buy") !== -1 || btnName.indexOf("buy_now") !== -1 || btnName.indexOf("buy-now") !== -1);
-            if(btn.hasClass("ajax_add_to_cart")) return;
+
+            // IF it is a buy now button or ajax button, DO NOTHING. DO NOT track AddToCart, DO NOT prevent default.
+            if(btn.hasClass("ajax_add_to_cart") || isBuyNow) return;
 
             if(!$(this).data("markeflav_bp_tracked")) {
                 var form = this;
@@ -409,7 +411,7 @@ add_action('wp_footer', function() {
 
                 $(this).data("markeflav_bp_tracked", true);
 
-                if (isBuyNow || !productId || productId==="undefined") {
+                if (!productId || productId==="undefined") {
                     return;
                 }
 
