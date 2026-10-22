@@ -161,10 +161,8 @@ add_action('wp_head', function() {
         var initUser = window.bpGetDynUser(); var cleanFbqData = {};
         ['em','ph','fn','ln','ct','st','cn','zp','external_id'].forEach(function(k){ if(initUser[k]) cleanFbqData[k] = initUser[k].toLowerCase().trim(); });
 
-        setTimeout(function() {
-            fbq('set', 'autoConfig', false, '<?php echo esc_js(get_option('sys_pid')); ?>');
-            fbq('init', '<?php echo esc_js(get_option('sys_pid')); ?>', cleanFbqData);
-        }, 250);
+        fbq('set', 'autoConfig', false, '<?php echo esc_js(get_option('sys_pid')); ?>');
+        fbq('init', '<?php echo esc_js(get_option('sys_pid')); ?>', cleanFbqData);
 
         var capiEvents = <?php echo json_encode(get_option('sys_ev_capi') ?: ['AddToCart','InitiateCheckout','Purchase']); ?>;
         var webEvents = <?php echo json_encode(get_option('sys_ev_web') ?: ['PageView', 'ViewContent', 'AddToCart', 'InitiateCheckout', 'Purchase']); ?>;
@@ -234,7 +232,7 @@ add_action('wp_head', function() {
 
             if (fireCapi) {
                 var capiPayload = { event_name: eventName, event_id: evId, custom_data: finalData, user_data: liveUser, event_source_url: window.location.href, url: window.location.href };
-                fetch('<?php echo esc_url(rest_url('bp/v1/sync')); ?>', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(capiPayload), keepalive: true }).catch(function(){});
+                fetch('<?php echo esc_url(rest_url('bp/v1/capi')); ?>', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(capiPayload), keepalive: true }).catch(function(){});
             }
         };
 
@@ -470,7 +468,7 @@ add_action('woocommerce_order_status_changed', function($id, $old, $new, $o) {
     wp_remote_post("https://graph.facebook.com/v21.0/{$pd}/events", array('body' => json_encode($pl), 'headers' => array('Content-Type' => 'application/json'), 'blocking' => false, 'timeout' => 1, 'sslverify' => false));
 }, 15, 4);
 
-add_action('rest_api_init', function() { register_rest_route('bp/v1', '/sync', array('methods' => 'POST', 'callback' => 'markeflav_bp_frontend_capi_proxy', 'permission_callback' => '__return_true')); });
+add_action('rest_api_init', function() { register_rest_route('bp/v1', '/capi', array('methods' => 'POST', 'callback' => 'markeflav_bp_frontend_capi_proxy', 'permission_callback' => '__return_true')); });
 function markeflav_bp_frontend_capi_proxy(WP_REST_Request $rq) {
     if (!markeflav_bp_is_active()) return new WP_REST_Response(['status'=>'disabled'], 200);
     $d = $rq->get_json_params(); $ev = sanitize_text_field($d['event_name'] ?? ''); $ev_id = sanitize_text_field($d['event_id'] ?? ''); if (!$ev || !$ev_id) return new WP_REST_Response(['status'=>'skip'], 200);

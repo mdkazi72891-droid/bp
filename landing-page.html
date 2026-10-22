@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Pixel Pro - Ultimate Tracking & Fraud Protection</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #334155;
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            background: linear-gradient(to bottom, #ffffff, #f8fafc);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            color: var(--dark);
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--gray);
+            max-width: 700px;
+            margin: 0 auto 40px auto;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 */
+            height: 0;
+            overflow: hidden;
+            max-width: 900px;
+            margin: 0 auto;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Features Comparison */
+        .comparison-section {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            color: var(--dark);
+            margin-bottom: 50px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+        }
+
+        .feature-card h3 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .feature-card ul {
+            padding-left: 20px;
+            color: var(--gray);
+        }
+
+        .feature-card li {
+            margin-bottom: 10px;
+        }
+
+        .highlight-badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        /* Reviews Section */
+        .reviews-section {
+            padding: 80px 0;
+            background: linear-gradient(to top, #ffffff, #f8fafc);
+        }
+
+        .reviews-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .review-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .reel-container {
+            position: relative;
+            padding-bottom: 177.77%; /* 9:16 ratio for reels */
+            height: 0;
+            overflow: hidden;
+        }
+
+        .reel-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 16px 40px;
+            border-radius: 30px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+            margin-top: 30px;
+        }
+
+        .cta-button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        footer {
+            background: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="container">
+            <h1>The Only Tracking System Built for BD F-Commerce</h1>
+            <p>Stop losing money to fake orders and adblockers. Backend Pixel Pro gives you 100% accurate Server-Side tracking and built-in fraud protection.</p>
+
+            <div class="video-container">
+                <!-- Placeholder for main YouTube video -->
+                <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?rel=0" title="Backend Pixel Pro Overview" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+
+            <a href="#buy" class="cta-button">Get Started Now</a>
+        </div>
+    </header>
+
+    <!-- Comparison Section -->
+    <section class="comparison-section">
+        <div class="container">
+            <h2 class="section-title">Why We Are Different</h2>
+
+            <div class="feature-grid">
+                <!-- Feature 1 -->
+                <div class="feature-card">
+                    <span class="highlight-badge">Exclusive Feature</span>
+                    <h3>100% Fake Order Protection</h3>
+                    <p>Unlike basic tracking plugins, we solve the biggest pain point in Bangladesh e-commerce:</p>
+                    <ul>
+                        <li>Identifies and blocks fraudulent IP addresses automatically.</li>
+                        <li>Ensures fake orders don't ruin your Facebook Pixel data.</li>
+                        <li>Saves your ad budget from targeting fake buyers.</li>
+                    </ul>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card">
+                    <span class="highlight-badge">Advanced Engineering</span>
+                    <h3>Unhackable CAPI Sync</h3>
+                    <p>Modern browsers block tracking. We bypass them completely:</p>
+                    <ul>
+                        <li>Custom CAPI endpoint (`/sync`) that evades AdBlockers.</li>
+                        <li>Asynchronous background processing means zero site slowdown.</li>
+                        <li>Guaranteed deduplication with precise `fbp` and `fbc` parameters.</li>
+                    </ul>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card">
+                    <span class="highlight-badge">Deep Analytics</span>
+                    <h3>Smart Abandoned Cart</h3>
+                    <p>Don't just track carts, recover them smartly:</p>
+                    <ul>
+                        <li>Captures data instantly using advanced browser fingerprinting (`fp`).</li>
+                        <li>Tracks exactly which campaign the user came from (UTM sync).</li>
+                        <li>High-speed database indexing optimized for massive traffic.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reviews Section (YouTube Shorts/Reels) -->
+    <section class="reviews-section">
+        <div class="container">
+            <h2 class="section-title">What Top Entrepreneurs Say</h2>
+
+            <div class="reviews-grid">
+                <!-- Review 1 -->
+                <div class="review-card">
+                    <div class="reel-container">
+                        <!-- Placeholder for YouTube Short/Reel -->
+                        <iframe src="https://www.youtube.com/embed/shorts/dQw4w9WgXcQ" title="Customer Review 1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <!-- Review 2 -->
+                <div class="review-card">
+                    <div class="reel-container">
+                        <iframe src="https://www.youtube.com/embed/shorts/dQw4w9WgXcQ" title="Customer Review 2" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <!-- Review 3 -->
+                <div class="review-card">
+                    <div class="reel-container">
+                        <iframe src="https://www.youtube.com/embed/shorts/dQw4w9WgXcQ" title="Customer Review 3" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 50px;">
+                <a href="#buy" class="cta-button">Secure Your Store Today</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Backend Pixel Pro. All rights reserved.</p>
+            <p style="font-size: 0.875rem; color: #94a3b8;">Built for scale. Optimized for performance.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
